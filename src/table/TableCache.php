@@ -57,7 +57,7 @@ class TableCache implements CacheInterface
      * @param int $size
      * @param int $dataLength
      */
-    private function initCacheTable(int $size, int $dataLength): void
+    private function initCacheTable(int $size, int $dataLength): Table
     {
         $table = new Table('cache', $size);
         $table->column('expire', Table::TYPE_STRING, 11);
@@ -318,5 +318,28 @@ class TableCache implements CacheInterface
         $value = $this->getValue($key);
 
         return $value !== false;
+    }
+
+    /**
+     * @param bool $force
+     */
+    private function gc($force = false)
+    {
+        if ($force || mt_rand(0, 1000000) < $this->gcProbability) {
+            App::info(static::className() . " GC begin");
+            $i = 100000;
+            $table = $this->tableInstance;
+            foreach ($table as $key => $column) {
+                if ($column['expire'] < time() || true) {
+                    $this->deleteValue($key);
+                }
+                $i--;
+                if ($i <= 0) {
+                    \Swoole\Coroutine::sleep($this->gcSleep);
+                    $i = 100000;
+                }
+            }
+            App::info(static::className() . " GC end.");
+        }
     }
 }

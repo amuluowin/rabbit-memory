@@ -33,17 +33,17 @@ class Table
     /**
      * int类型
      */
-    const TYPE_INT = Table::TYPE_INT;
+    const TYPE_INT = SwooleTable::TYPE_INT;
 
     /**
      * string类型
      */
-    const TYPE_STRING = Table::TYPE_STRING;
+    const TYPE_STRING = SwooleTable::TYPE_STRING;
 
     /**
      * float类型
      */
-    const TYPE_FLOAT = Table::TYPE_FLOAT;
+    const TYPE_FLOAT = SwooleTable::TYPE_FLOAT;
     /**
      * @var SwooleTable $table 内存表实例
      */
