@@ -37,6 +37,22 @@ class TableCache implements CacheInterface
     private $dataLength = 8192;
 
     /**
+     * the max expire of cache limited by this value
+     * @var int
+     */
+    private $maxLive = 3000000;
+    /**
+     * @var int Gc process will seelp $gcSleep second each 100000 times
+     */
+    private $gcSleep = 0.01;
+    /**
+     * @var int the probability (parts per million) that garbage collection (GC) should be performed
+     * when storing a piece of data in the cache. Defaults to 100, meaning 0.01% chance.
+     * This number should be between 0 and 1000000. A value 0 meaning no GC will be performed at all.
+     */
+    private $gcProbability = 100;
+
+    /**
      * TableCache constructor.
      * @param int $size
      * @param int $dataLength
@@ -75,10 +91,10 @@ class TableCache implements CacheInterface
     public function get($key, $default = null)
     {
         $value = $this->getValue($key);
-        if ($value === false || $this->serializer === null) {
+        if ($value === false) {
             return $value;
         } elseif ($this->serializer === null) {
-            return Serialize::pack($value);
+            return Serialize::unpack($value);
         } else {
             $value = $this->serializer->decode($value);
         }
@@ -138,9 +154,9 @@ class TableCache implements CacheInterface
     public function set($key, $value, $ttl = null)
     {
         if ($this->serializer === null) {
-            $value = Serialize::unpack($value);
+            $value = Serialize::pack($value);
         } else {
-            $value = $this->serializer->decode($value);
+            $value = $this->serializer->encode($value);
         }
 
         return $this->setValue($key, $value, $ttl);
@@ -168,7 +184,7 @@ class TableCache implements CacheInterface
      * @param int $num
      * @return bool|string
      */
-    private function setValueRec($key, &$value, $expire, $valueLength, $num = 0): bool
+    private function setValueRec($key, &$value, $expire, $valueLength, $num = 0)
     {
         $start = $num * $this->dataLength;
         if ($start > $valueLength) {

@@ -190,6 +190,32 @@ class Table
      */
     public function column(string $name, int $type, int $size = 0): void
     {
+        $this->columns[$name] = [$type, $size];
+    }
+
+    /**
+     * 创建内存表
+     * @return bool
+     */
+    public function create(): bool
+    {
+        foreach ($this->columns as $field => $fieldValue) {
+            $args = array_merge([$field], $fieldValue);
+            $args = $this->checkColumn(...$args);
+            $this->createColumn(...$args);
+        }
+
+        return $this->table->create();
+    }
+
+    /**
+     * @param string $name
+     * @param int $type
+     * @param int $size
+     * @return array
+     */
+    private function checkColumn(string $name, int $type, int $size): array
+    {
         switch ($type) {
             case self::TYPE_INT:
                 if (!in_array($size,
@@ -208,21 +234,17 @@ class Table
             default:
                 throw new \RuntimeException('Undefind Column-Type::' . $type);
         }
-        $this->columns[$name] = [$type, $size];
+        return [$name, $type, $size];
     }
 
     /**
-     * 创建内存表
-     * @return bool
+     * @param string $name
+     * @param int $type
+     * @param int $size
      */
-    public function create(): bool
+    private function createColumn(string $name, int $type, int $size)
     {
-        foreach ($this->columns as $field => $fieldValue) {
-            $args = array_merge([$field], $fieldValue);
-            $this->column(...$args);
-        }
-
-        return $this->table->create();
+        $this->table->column($name, $type, $size);
     }
 
     /**
@@ -274,7 +296,7 @@ class Table
      *
      * @return array
      */
-    public function get(string $key, $field = null): array
+    public function get(string $key, $field = null)
     {
         return $field ? $this->table->get($key, $field) : $this->table->get($key);
     }
