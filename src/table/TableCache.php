@@ -11,7 +11,6 @@ namespace rabbit\memory\table;
 
 use Psr\SimpleCache\CacheInterface;
 use rabbit\App;
-use rabbit\core\ObjectFactory;
 use rabbit\parser\ParserInterface;
 use Swoole\Serialize;
 
@@ -57,7 +56,7 @@ class TableCache implements CacheInterface
      * @param int $size
      * @param int $dataLength
      */
-    public function __construct(int $size = 1024, int $dataLength = 8192)
+    public function __construct(int $size = 1024, int $dataLength = 8192, ParserInterface $serializer = null)
     {
         $app = App::getApp();
         if (!property_exists($app, 'tableCache')) {
@@ -65,7 +64,7 @@ class TableCache implements CacheInterface
         } else {
             $this->tableInstance = $app->tableCache;
         }
-        $this->serializer = ObjectFactory::get('cache.serializer ', false);
+        $this->serializer = $serializer;
         $this->dataLength = $dataLength;
     }
 
