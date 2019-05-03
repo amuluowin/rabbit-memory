@@ -1,67 +1,51 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: Administrator
- * Date: 2018/10/25
- * Time: 13:47
- */
+
 
 namespace rabbit\memory\lock;
 
-use Swoole\Lock as SwooleLock;
-
 /**
- * Class Lock
+ * Class LockCtl
  * @package rabbit\memory\lock
  */
-class Lock
+class Lock implements LockInterface
 {
-    /**
-     * @var array
-     */
-    private $locks = [];
+    /** @var \Swoole\Lock */
+    private $lock;
 
     /**
-     * @param string $name
-     * @param int $locktype
-     * @param string|null $lockfile
+     * LockCtl constructor.
+     * @param \Swoole\Lock $lock
      */
-    public function addLock(string $name, int $locktype, string $lockfile = null): void
+    public function __construct(\Swoole\Lock $lock)
     {
-        if ($locktype === SWOOLE_FILELOCK) {
-            if (!$lockfile) {
-                throw new \InvalidArgumentException('the filelock must with a file!');
-            }
-            $this->locks[$name] = new SwooleLock($locktype, $lockfile);
-        } else {
-            $this->locks[$name] = new SwooleLock($locktype);
-        }
+        $this->lock = $lock;
     }
 
     /**
-     * @param array $locks
+     * @return \Swoole\Lock
      */
-    public function addLocks(array $locks): void
+    public function getLock(): \Swoole\Lock
     {
-        foreach ($locks as $name => $lock) {
-            $this->locks[$name] = $lock;
-        }
+        return $this->lock;
     }
 
     /**
-     * @param string $name
-     * @return null|SwooleLock
+     * @param callable $function
      */
-    public function getLock(string $name): ?SwooleLock
+    public function lock(callable $function)
     {
-        return isset($this->locks[$name]) ? $this->locks[$name] : null;
+        $this->lock->lock();
+        $result = call_user_func($function);
+        $this->lock->unlock();
+        return $result;
     }
 
     /**
-     * @return array
+     * @param \Swoole\Lock $lock
+     * @return LockCtl
      */
-    public function getLocks(): array
+    public static function create(\Swoole\Lock $lock): LockInterface
     {
-        return $this->locks;
+        return new static($lock);
     }
 }
