@@ -96,7 +96,7 @@ class Atomic implements AtomicInterface
      */
     public function set(string $name, int $value): void
     {
-        return $this->getAtomic($name)->set($value);
+        $this->getAtomic($name)->set($value);
     }
 
     /**
