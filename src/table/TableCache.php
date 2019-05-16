@@ -341,7 +341,7 @@ class TableCache implements CacheInterface
     private function gc($force = false)
     {
         if ($force || mt_rand(0, 1000000) < $this->gcProbability) {
-            App::info(static::className() . " GC begin");
+            App::info("TableCache GC begin");
             $i = 100000;
             $table = $this->tableInstance;
             foreach ($table as $key => $column) {
@@ -354,7 +354,7 @@ class TableCache implements CacheInterface
                     $i = 100000;
                 }
             }
-            App::info(static::className() . " GC end.");
+            App::info("TableCache GC end.");
         }
     }
 }
