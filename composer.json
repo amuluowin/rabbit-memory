@@ -1,17 +1,17 @@
 {
-    "name": "rabbit/memory",
-    "description": "rabbit memory",
-    "type": "library",
-    "license": "MIT",
-    "authors": [
-        {
-            "name": "albert",
-            "email": "63851587@qq.com"
-        }
-    ],
-    "autoload": {
-        "psr-4": {
-            "rabbit\\memory\\": "src/"
-        }
+  "name": "rabbit/memory",
+  "description": "rabbit memory",
+  "type": "library",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "albert",
+      "email": "63851587@qq.com"
     }
+  ],
+  "autoload": {
+    "psr-4": {
+      "rabbit\\memory\\": "src/"
+    }
+  }
 }

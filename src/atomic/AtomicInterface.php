@@ -11,6 +11,7 @@ interface AtomicInterface
 {
     const INT32 = '\Swoole\Atomic';
     const INT64 = '\Swoole\Atomic\Long';
+
     /**
      * @param string $name
      * @param $value

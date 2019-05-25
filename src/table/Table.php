@@ -85,6 +85,16 @@ class Table
     }
 
     /**
+     * 获取内存表实例
+     *
+     * @return \Swoole\Table
+     */
+    public function getTable(): SwooleTable
+    {
+        return $this->table;
+    }
+
+    /**
      * 设置内存表实例
      *
      * @param SwooleTable $table 内存表实例
@@ -99,13 +109,13 @@ class Table
     }
 
     /**
-     * 获取内存表实例
+     * 返回内存表名
      *
-     * @return \Swoole\Table
+     * @return string
      */
-    public function getTable(): SwooleTable
+    public function getName(): string
     {
-        return $this->table;
+        return $this->name;
     }
 
     /**
@@ -123,13 +133,13 @@ class Table
     }
 
     /**
-     * 返回内存表名
+     * 获取内存表大小
      *
-     * @return string
+     * @return mixed
      */
-    public function getName(): string
+    public function getSize(): int
     {
-        return $this->name;
+        return $this->size;
     }
 
     /**
@@ -147,13 +157,13 @@ class Table
     }
 
     /**
-     * 获取内存表大小
+     * 返回列字段数组
      *
-     * @return mixed
+     * @return array
      */
-    public function getSize(): int
+    public function getColumns(): array
     {
-        return $this->size;
+        return $this->columns;
     }
 
     /**
@@ -168,16 +178,6 @@ class Table
         $this->columns = $columns;
 
         return $this;
-    }
-
-    /**
-     * 返回列字段数组
-     *
-     * @return array
-     */
-    public function getColumns(): array
-    {
-        return $this->columns;
     }
 
     /**

@@ -11,14 +11,14 @@ namespace rabbit\memory\table;
 
 use Psr\SimpleCache\CacheInterface;
 use rabbit\App;
+use rabbit\cache\AbstractCache;
 use rabbit\parser\ParserInterface;
-use Swoole\Serialize;
 
 /**
  * Class TableCache
  * @package rabbit\memory\table
  */
-class TableCache implements CacheInterface
+class TableCache extends AbstractCache implements CacheInterface
 {
     /**
      * @var ParserInterface|null
@@ -58,6 +58,7 @@ class TableCache implements CacheInterface
      */
     public function __construct(int $size = 1024, int $dataLength = 8192, ParserInterface $serializer = null)
     {
+        parent::__construct();
         $app = App::getApp();
         if (!property_exists($app, 'tableCache')) {
             $this->tableInstance = $app->tableCache = $this->initCacheTable($size, $dataLength);
@@ -89,11 +90,12 @@ class TableCache implements CacheInterface
      */
     public function get($key, $default = null)
     {
+        $key = $this->buildKey($key);
         $value = $this->getValue($key);
         if ($value === false) {
             return $value;
         } elseif ($this->serializer === null) {
-            return Serialize::unpack($value);
+            return unserialize($value);
         } else {
             $value = $this->serializer->decode($value);
         }
@@ -131,17 +133,18 @@ class TableCache implements CacheInterface
     }
 
     /**
-     * @param $keys
-     * @return array
+     * @param $key
+     * @return bool
      */
-    protected function getValues($keys)
+    private function deleteValue($key)
     {
-        $results = [];
-        foreach ($keys as $key) {
-            $results[$key] = $this->getValue($key);
+        $column = $column = $this->tableInstance->get($key);
+        if ($column) {
+            $nextId = $column['nextId'];
+            unset($column);
+            $nextId && $this->deleteValue($nextId);
         }
-
-        return $results;
+        return $this->tableInstance->del($key);
     }
 
     /**
@@ -152,8 +155,9 @@ class TableCache implements CacheInterface
      */
     public function set($key, $value, $ttl = null)
     {
+        $key = $this->buildKey($key);
         if ($this->serializer === null) {
-            $value = Serialize::pack($value);
+            $value = serialize($value);
         } else {
             $value = $this->serializer->encode($value);
         }
@@ -173,6 +177,29 @@ class TableCache implements CacheInterface
         $expire = $duration ? $duration + time() : 0;
         $valueLength = strlen($value);
         return (boolean)$this->setValueRec($key, $value, $expire, $valueLength);
+    }
+
+    /**
+     * @param bool $force
+     */
+    private function gc($force = false)
+    {
+        if ($force || mt_rand(0, 1000000) < $this->gcProbability) {
+            App::info("TableCache GC begin");
+            $i = 100000;
+            $table = $this->tableInstance;
+            foreach ($table as $key => $column) {
+                if ($column['expire'] < time() || true) {
+                    $this->deleteValue($key);
+                }
+                $i--;
+                if ($i <= 0) {
+                    \Swoole\Coroutine::sleep($this->gcSleep);
+                    $i = 100000;
+                }
+            }
+            App::info("TableCache GC end.");
+        }
     }
 
     /**
@@ -219,22 +246,8 @@ class TableCache implements CacheInterface
      */
     public function delete($key)
     {
+        $this->buildKey($key);
         return $this->deleteValue($key);
-    }
-
-    /**
-     * @param $key
-     * @return bool
-     */
-    private function deleteValue($key)
-    {
-        $column = $column = $this->tableInstance->get($key);
-        if ($column) {
-            $nextId = $column['nextId'];
-            unset($column);
-            $nextId && $this->deleteValue($nextId);
-        }
-        return $this->tableInstance->del($key);
     }
 
     /**
@@ -255,17 +268,35 @@ class TableCache implements CacheInterface
      */
     public function getMultiple($keys, $default = null)
     {
-        $values = $this->getValues(array_values($keys));
+        $newKeys = [];
+        foreach ($keys as $key) {
+            $newKeys[$key] = $this->buildKey($key);
+        }
+        $values = $this->getValues(array_values($newKeys));
         $results = [];
-        foreach ($keys as $key => $newKey) {
+        foreach ($newKeys as $key => $newKey) {
             $results[$key] = false;
             if (isset($values[$newKey])) {
                 if ($this->serializer === null) {
-                    $results[$key] = Serialize::unpack($values[$newKey]);
+                    $results[$key] = unserialize($values[$newKey]);
                 } else {
                     $results[$key] = $this->serializer->decode($values[$newKey]);
                 }
             }
+        }
+
+        return $results;
+    }
+
+    /**
+     * @param $keys
+     * @return array
+     */
+    protected function getValues($keys)
+    {
+        $results = [];
+        foreach ($keys as $key) {
+            $results[$key] = $this->getValue($key);
         }
 
         return $results;
@@ -279,13 +310,13 @@ class TableCache implements CacheInterface
     public function setMultiple($values, $ttl = null)
     {
         $data = [];
-        foreach ($items as $key => $value) {
+        foreach ($values as $key => $value) {
             if ($this->serializer === null) {
-                $value = Serialize::pack($value);
+                $value = serialize($value);
             } else {
                 $value = $this->serializer->encode($value);
             }
-            $data[$key] = $value;
+            $data[$this->buildKey($key)] = $value;
         }
 
         return $this->setValues($data, $ttl);
@@ -316,7 +347,7 @@ class TableCache implements CacheInterface
     {
         $failedKeys = [];
         foreach ($data as $key => $value) {
-            if ($this->deleteValue($key) === false) {
+            if ($this->deleteValue($this->buildKey($key)) === false) {
                 $failedKeys[] = $key;
             }
         }
@@ -333,28 +364,5 @@ class TableCache implements CacheInterface
         $value = $this->getValue($key);
 
         return $value !== false;
-    }
-
-    /**
-     * @param bool $force
-     */
-    private function gc($force = false)
-    {
-        if ($force || mt_rand(0, 1000000) < $this->gcProbability) {
-            App::info("TableCache GC begin");
-            $i = 100000;
-            $table = $this->tableInstance;
-            foreach ($table as $key => $column) {
-                if ($column['expire'] < time() || true) {
-                    $this->deleteValue($key);
-                }
-                $i--;
-                if ($i <= 0) {
-                    \Swoole\Coroutine::sleep($this->gcSleep);
-                    $i = 100000;
-                }
-            }
-            App::info("TableCache GC end.");
-        }
     }
 }

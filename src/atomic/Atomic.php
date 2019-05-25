@@ -30,20 +30,6 @@ class Atomic implements AtomicInterface
     }
 
     /**
-     * @param string $name
-     * @param int $init_value
-     * @param string|null $type
-     * @return mixed
-     */
-    public function getAtomic(string $name, int $init_value = 0, string $type = null)
-    {
-        $type = $type ?? $this->default;
-        $atomic = new $type($init_value);
-        $this->atomics[$name] = $atomic;
-        return $atomic;
-    }
-
-    /**
      * @return array
      */
     public function getAtomics(): array
@@ -59,6 +45,20 @@ class Atomic implements AtomicInterface
         foreach ($atomics as $name => $init_value) {
             $this->getAtomic($name, $init_value);
         }
+    }
+
+    /**
+     * @param string $name
+     * @param int $init_value
+     * @param string|null $type
+     * @return mixed
+     */
+    public function getAtomic(string $name, int $init_value = 0, string $type = null)
+    {
+        $type = $type ?? $this->default;
+        $atomic = new $type($init_value);
+        $this->atomics[$name] = $atomic;
+        return $atomic;
     }
 
     /**
