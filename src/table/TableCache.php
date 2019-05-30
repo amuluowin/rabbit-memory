@@ -55,6 +55,7 @@ class TableCache extends AbstractCache implements CacheInterface
      * TableCache constructor.
      * @param int $size
      * @param int $dataLength
+     * @param ParserInterface|null $serializer
      */
     public function __construct(int $size = 1024, int $dataLength = 8192, ParserInterface $serializer = null)
     {
@@ -72,6 +73,7 @@ class TableCache extends AbstractCache implements CacheInterface
     /**
      * @param int $size
      * @param int $dataLength
+     * @return Table
      */
     private function initCacheTable(int $size, int $dataLength): Table
     {
@@ -93,14 +95,12 @@ class TableCache extends AbstractCache implements CacheInterface
         $key = $this->buildKey($key);
         $value = $this->getValue($key);
         if ($value === false) {
-            return $value;
+            return $default;
         } elseif ($this->serializer === null) {
             return unserialize($value);
         } else {
-            $value = $this->serializer->decode($value);
+            return $this->serializer->decode($value);
         }
-
-        return $default;
     }
 
     /**
@@ -117,9 +117,10 @@ class TableCache extends AbstractCache implements CacheInterface
             $nowtime = time();
         }
         $column = $this->tableInstance->get($key);
-        if ($column == false) {
+        if ($column === false) {
             return false;
         }
+
         if ($column['expire'] != 0 && $column['expire'] < $nowtime) {
             $this->deleteValue($key);
             return false;
@@ -129,6 +130,7 @@ class TableCache extends AbstractCache implements CacheInterface
             $this->tableInstance->del($key);
             return false;
         }
+
         return $column['data'] . $nextValue;
     }
 
@@ -152,6 +154,7 @@ class TableCache extends AbstractCache implements CacheInterface
      * @param mixed $value
      * @param null $ttl
      * @return bool
+     * @throws \Exception
      */
     public function set($key, $value, $ttl = null)
     {
@@ -170,10 +173,12 @@ class TableCache extends AbstractCache implements CacheInterface
      * @param $value
      * @param $duration
      * @return bool
+     * @throws \Exception
      */
     private function setValue($key, $value, $duration): bool
     {
         $this->gc();
+        $duration = $duration > $this->maxLive ? $this->maxLive : $duration;
         $expire = $duration ? $duration + time() : 0;
         $valueLength = strlen($value);
         return (boolean)$this->setValueRec($key, $value, $expire, $valueLength);
@@ -181,6 +186,7 @@ class TableCache extends AbstractCache implements CacheInterface
 
     /**
      * @param bool $force
+     * @throws \Exception
      */
     private function gc($force = false)
     {
@@ -189,7 +195,7 @@ class TableCache extends AbstractCache implements CacheInterface
             $i = 100000;
             $table = $this->tableInstance;
             foreach ($table as $key => $column) {
-                if ($column['expire'] < time() || true) {
+                if ($column['expire'] < time()) {
                     $this->deleteValue($key);
                 }
                 $i--;
@@ -231,6 +237,7 @@ class TableCache extends AbstractCache implements CacheInterface
             'nextId' => $nextId,
             'data' => substr($value, $start, $this->dataLength)
         ]);
+
         if ($result === false) {
             if ($nextId) {
                 $this->deleteValue($nextId);
@@ -306,6 +313,7 @@ class TableCache extends AbstractCache implements CacheInterface
      * @param iterable $values
      * @param null $ttl
      * @return array|bool
+     * @throws \Exception
      */
     public function setMultiple($values, $ttl = null)
     {
@@ -326,6 +334,7 @@ class TableCache extends AbstractCache implements CacheInterface
      * @param $data
      * @param $duration
      * @return array
+     * @throws \Exception
      */
     private function setValues($data, $duration)
     {
@@ -341,12 +350,12 @@ class TableCache extends AbstractCache implements CacheInterface
 
     /**
      * @param iterable $keys
-     * @return bool|void
+     * @return array|bool
      */
     public function deleteMultiple($keys)
     {
         $failedKeys = [];
-        foreach ($data as $key => $value) {
+        foreach ($keys as $key => $value) {
             if ($this->deleteValue($this->buildKey($key)) === false) {
                 $failedKeys[] = $key;
             }
