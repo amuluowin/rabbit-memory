@@ -9,94 +9,52 @@
 namespace rabbit\memory\atomic;
 
 
-use rabbit\exception\NotSupportedException;
-
 /**
  * Class Atomic
  * @package rabbit\memory\atomic
  */
 class Atomic implements AtomicInterface
 {
-    /**
-     * @var array
-     */
-    protected $atomics = [];
-    /** @var string */
-    protected $default = self::INT32;
+    /** @var \Swoole\Atomic|\Swoole\Atomic\Long */
+    protected $atomic;
 
-    public function __construct(string $default = self::INT32)
+    public function __construct(int $init_value = 0)
     {
-        $this->default = $default;
+        $this->atomic = new \Swoole\Atomic($init_value);
     }
 
     /**
-     * @return array
-     */
-    public function getAtomics(): array
-    {
-        return $this->atomics;
-    }
-
-    /**
-     * @param array $atomics
-     */
-    public function addAtomics(array $atomics): void
-    {
-        foreach ($atomics as $name => $init_value) {
-            $this->getAtomic($name, $init_value);
-        }
-    }
-
-    /**
-     * @param string $name
-     * @param int $init_value
-     * @param string|null $type
-     * @return mixed
-     */
-    public function getAtomic(string $name, int $init_value = 0, string $type = null)
-    {
-        $type = $type ?? $this->default;
-        $atomic = new $type($init_value);
-        $this->atomics[$name] = $atomic;
-        return $atomic;
-    }
-
-    /**
-     * @param string $name
      * @param $value
      * @return int
      */
-    public function add(string $name, $value): int
+    public function add($value): int
     {
-        return $this->getAtomic($name)->add($value);
+        return $this->atomic->add($value);
     }
 
     /**
-     * @param string $name
      * @param $value
      * @return int
      */
-    public function sub(string $name, $value): int
+    public function sub($value): int
     {
-        return $this->getAtomic($name)->sub($value);
+        return $this->atomic->sub($value);
     }
 
     /**
-     * @param string $name
      * @return int
      */
-    public function get(string $name): int
+    public function get(): int
     {
-        return $this->getAtomic($name)->get($value);
+        return $this->atomic->get($value);
     }
 
     /**
-     * @param string $name
      * @param int $value
      */
-    public function set(string $name, int $value): void
+    public function set(int $value): void
     {
-        $this->getAtomic($name)->set($value);
+        $this->atomic->set($value);
     }
 
     /**
@@ -106,7 +64,7 @@ class Atomic implements AtomicInterface
      */
     public function cmpset(int $cmp_value, int $set_value): bool
     {
-        return $this->getAtomic($name)->cmpset($cmp_value, $set_value);
+        return $this->atomic->cmpset($cmp_value, $set_value);
     }
 
     /**
@@ -115,10 +73,7 @@ class Atomic implements AtomicInterface
      */
     public function wait(float $timeout = 1.0): bool
     {
-        if (($atomic = $this->getAtomic($name)) instanceof \Swoole\Atomic\Long) {
-            throw new NotSupportedException("atomic {$name} not support " . __METHOD__);
-        }
-        return $atomic->wait($timeout);
+        return $this->atomic->wait($timeout);
     }
 
     /**
@@ -127,9 +82,22 @@ class Atomic implements AtomicInterface
      */
     public function wakeup(int $n = 1): bool
     {
-        if (($atomic = $this->getAtomic($name)) instanceof \Swoole\Atomic\Long) {
-            throw new NotSupportedException("atomic {$name} not support " . __METHOD__);
+        return $this->atomic->wakeup($n);
+    }
+
+    /**
+     * @param \Closure $function
+     * @param array $params
+     * @return mixed
+     */
+    public function lock(\Closure $function, array $params = [])
+    {
+        while ($this->atomic->get() !== 0) {
+            \Co::sleep(0.001);
         }
-        return $this->atomics[$name]->wakeup($n);
+        $this->atomic->add();
+        $result = call_user_func($function, ...$params);
+        $this->atomic->sub();
+        return $result;
     }
 }

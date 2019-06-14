@@ -9,34 +9,27 @@ namespace rabbit\memory\atomic;
  */
 interface AtomicInterface
 {
-    const INT32 = '\Swoole\Atomic';
-    const INT64 = '\Swoole\Atomic\Long';
-
     /**
-     * @param string $name
      * @param $value
      * @return int
      */
-    public function add(string $name, $value): int;
+    public function add($value): int;
 
     /**
-     * @param string $name
      * @param $value
      * @return int
      */
-    public function sub(string $name, $value): int;
+    public function sub($value): int;
 
     /**
-     * @param string $name
      * @return int
      */
-    public function get(string $name): int;
+    public function get(): int;
 
     /**
-     * @param string $name
      * @param int $value
      */
-    public function set(string $name, int $value): void;
+    public function set(int $value): void;
 
     /**
      * @param int $cmp_value
@@ -56,4 +49,11 @@ interface AtomicInterface
      * @return bool
      */
     public function wakeup(int $n = 1): bool;
+
+    /**
+     * @param \Closure $function
+     * @param array $params
+     * @return mixed
+     */
+    public function lock(\Closure $function, array $params = []);
 }
