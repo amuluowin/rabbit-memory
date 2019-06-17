@@ -9,6 +9,8 @@
 namespace rabbit\memory\atomic;
 
 
+use rabbit\helper\ExceptionHelper;
+
 /**
  * Class Atomic
  * @package rabbit\memory\atomic
@@ -83,21 +85,5 @@ class Atomic implements AtomicInterface
     public function wakeup(int $n = 1): bool
     {
         return $this->atomic->wakeup($n);
-    }
-
-    /**
-     * @param \Closure $function
-     * @param array $params
-     * @return mixed
-     */
-    public function lock(\Closure $function, array $params = [])
-    {
-        while ($this->atomic->get() !== 0) {
-            \Co::sleep(0.001);
-        }
-        $this->atomic->add();
-        $result = call_user_func($function, ...$params);
-        $this->atomic->sub();
-        return $result;
     }
 }

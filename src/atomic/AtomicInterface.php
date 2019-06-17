@@ -49,11 +49,4 @@ interface AtomicInterface
      * @return bool
      */
     public function wakeup(int $n = 1): bool;
-
-    /**
-     * @param \Closure $function
-     * @param array $params
-     * @return mixed
-     */
-    public function lock(\Closure $function, array $params = []);
 }
