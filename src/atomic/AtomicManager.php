@@ -23,9 +23,9 @@ class AtomicManager
 
     /**
      * @param string $name
-     * @return Atomic
+     * @return AtomicInterface|null
      */
-    public function getAtomic(string $name): ?Atomic
+    public function getAtomic(string $name): ?AtomicInterface
     {
         if (isset($this->atomics[$name])) {
             return $this->atomics[$name];
