@@ -9,8 +9,6 @@
 namespace rabbit\memory\atomic;
 
 
-use rabbit\helper\ExceptionHelper;
-
 /**
  * Class Atomic
  * @package rabbit\memory\atomic
@@ -26,19 +24,19 @@ class Atomic implements AtomicInterface
     }
 
     /**
-     * @param $value
+     * @param int $value
      * @return int
      */
-    public function add($value): int
+    public function add(int $value = 1): int
     {
         return $this->atomic->add($value);
     }
 
     /**
-     * @param $value
+     * @param int $value
      * @return int
      */
-    public function sub($value): int
+    public function sub(int $value = 1): int
     {
         return $this->atomic->sub($value);
     }

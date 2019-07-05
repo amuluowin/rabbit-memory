@@ -13,13 +13,13 @@ interface AtomicInterface
      * @param $value
      * @return int
      */
-    public function add($value): int;
+    public function add(int $value = 1): int;
 
     /**
      * @param $value
      * @return int
      */
-    public function sub($value): int;
+    public function sub(int $value = 1): int;
 
     /**
      * @return int
