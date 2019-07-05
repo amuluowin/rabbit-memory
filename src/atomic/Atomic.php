@@ -46,7 +46,7 @@ class Atomic implements AtomicInterface
      */
     public function get(): int
     {
-        return $this->atomic->get($value);
+        return $this->atomic->get();
     }
 
     /**
