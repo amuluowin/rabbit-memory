@@ -195,7 +195,7 @@ class TableCache extends AbstractCache implements CacheInterface
             $i = 100000;
             $table = $this->tableInstance;
             foreach ($table as $key => $column) {
-                if ($column['expire'] < time()) {
+                if ($column['expire'] > 0 && $column['expire'] < time()) {
                     $this->deleteValue($key);
                 }
                 $i--;
