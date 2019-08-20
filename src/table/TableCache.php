@@ -121,7 +121,7 @@ class TableCache extends AbstractCache implements CacheInterface
             return false;
         }
 
-        if ($column['expire'] != 0 && $column['expire'] < $nowtime) {
+        if ($column['expire'] > 0 && $column['expire'] < $nowtime) {
             $this->deleteValue($key);
             return false;
         }
