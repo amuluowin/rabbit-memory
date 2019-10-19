@@ -8,7 +8,6 @@
 
 namespace rabbit\memory\atomic;
 
-
 /**
  * Class Atomic
  * @package rabbit\memory\atomic

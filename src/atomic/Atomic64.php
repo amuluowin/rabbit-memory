@@ -8,7 +8,6 @@
 
 namespace rabbit\memory\atomic;
 
-
 use rabbit\exception\NotSupportedException;
 
 /**

@@ -218,8 +218,10 @@ class Table
     {
         switch ($type) {
             case self::TYPE_INT:
-                if (!in_array($size,
-                    [self::ONE_INT_LENGTH, self::TWO_INT_LENGTH, self::FOUR_INT_LENGTH, self::EIGHT_INT_LENGTH])) {
+                if (!in_array(
+                    $size,
+                    [self::ONE_INT_LENGTH, self::TWO_INT_LENGTH, self::FOUR_INT_LENGTH, self::EIGHT_INT_LENGTH]
+                )) {
                     $size = 4;
                 }
                 break;

@@ -8,7 +8,6 @@
 
 namespace rabbit\memory\table;
 
-
 use Psr\SimpleCache\CacheInterface;
 use rabbit\App;
 use rabbit\cache\AbstractCache;

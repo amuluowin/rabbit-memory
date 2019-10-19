@@ -41,5 +41,4 @@ class AtomicLock implements LockInterface
             $this->atomic->sub();
         }
     }
-
 }
