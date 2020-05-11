@@ -59,12 +59,7 @@ class TableCache extends AbstractCache implements CacheInterface
     public function __construct(int $size = 1024, int $dataLength = 8192, ParserInterface $serializer = null)
     {
         parent::__construct();
-        $app = App::getApp();
-        if (!property_exists($app, 'tableCache')) {
-            $this->tableInstance = $app->tableCache = $this->initCacheTable($size, $dataLength);
-        } else {
-            $this->tableInstance = $app->tableCache;
-        }
+        $this->tableInstance = $this->initCacheTable($size, $dataLength);
         $this->serializer = $serializer;
         $this->dataLength = $dataLength;
     }
@@ -261,8 +256,11 @@ class TableCache extends AbstractCache implements CacheInterface
      */
     public function clear()
     {
-        $table = $this->tableInstance;
-        foreach ($table as $key => $column) {
+        $table = [];
+        foreach ($this->tableInstance as $key => $column) {
+            $table[] = $key;
+        }
+        foreach ($table as $key) {
             $this->tableInstance->del($key);
         }
     }
