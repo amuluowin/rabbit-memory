@@ -21,16 +21,17 @@ class AtomicLock implements LockInterface
     {
         $this->atomic = new \Swoole\Atomic();
     }
+
     /**
      * @param \Closure $function
      * @param array $params
      * @return mixed
      */
-    public function lock(\Closure $function, array $params = [])
+    public function __invoke(\Closure $function, string $name = '', float $timeout = 0.001, array $params = [])
     {
         try {
             while ($this->atomic->get() !== 0) {
-                \Co::sleep(0.001);
+                \Co::sleep($timeout);
             }
             $this->atomic->add();
             $result = call_user_func($function, ...$params);

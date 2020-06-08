@@ -14,5 +14,5 @@ interface LockInterface
      * @param array $params
      * @return mixed
      */
-    public function lock(\Closure $function, array $params = []);
+    public function __invoke(\Closure $function, string $name = '', float $timeout = 600, array $params = []);
 }
