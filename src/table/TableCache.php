@@ -367,6 +367,7 @@ class TableCache extends AbstractCache implements CacheInterface
      */
     public function has($key)
     {
+        $key = $this->buildKey($key);
         $value = $this->getValue($key);
 
         return $value !== false;
